@@ -1,0 +1,4 @@
+node_modules/
+docs/screenshots/*.png
+config/*.local.json
+*.log

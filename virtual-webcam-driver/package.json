@@ -1,0 +1,23 @@
+{
+  "name": "virtual-webcam-driver",
+  "version": "0.1.0",
+  "description": "Electron control surface for DroidCam on Linux with preview, status monitoring, profiles, logs, and OBS launch.",
+  "main": "app/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "capture:screenshot": "mkdir -p docs/screenshots && VIRTUAL_WEBCAM_DRIVER_DEMO=1 VIRTUAL_WEBCAM_DRIVER_CAPTURE_PATH=docs/screenshots/dashboard.png electron ."
+  },
+  "keywords": [
+    "electron",
+    "droidcam",
+    "obs",
+    "linux",
+    "virtual-webcam"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^37.2.0"
+  }
+}

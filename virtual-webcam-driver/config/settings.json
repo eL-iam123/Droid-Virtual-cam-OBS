@@ -1,0 +1,8 @@
+{
+  "selectedProfile": "recording",
+  "sourceMode": "wifi",
+  "host": "",
+  "port": 4747,
+  "videoDevice": "",
+  "journalUnit": "virtual-webcam-driver.service"
+}

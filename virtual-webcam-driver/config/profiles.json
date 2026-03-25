@@ -1,0 +1,32 @@
+{
+  "gaming": {
+    "label": "Gaming",
+    "description": "720p video-only profile tuned for stable frame pacing.",
+    "size": "1280x720",
+    "previewSize": "1280x720",
+    "enableAudio": false,
+    "scanTimeoutMs": 220,
+    "reconnectBias": "aggressive",
+    "notes": "Use when OBS is live and you want predictable overhead."
+  },
+  "recording": {
+    "label": "Recording",
+    "description": "1080p profile tuned for capture quality and optional audio.",
+    "size": "1920x1080",
+    "previewSize": "1280x720",
+    "enableAudio": true,
+    "scanTimeoutMs": 320,
+    "reconnectBias": "balanced",
+    "notes": "Use when image quality matters more than minimum latency."
+  },
+  "low-latency": {
+    "label": "Low Latency",
+    "description": "960x720 video-only profile with the shortest scan timeout.",
+    "size": "960x720",
+    "previewSize": "960x720",
+    "enableAudio": false,
+    "scanTimeoutMs": 180,
+    "reconnectBias": "minimal",
+    "notes": "Use when the network is noisy and you want fast recovery."
+  }
+}
