@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">Virtual Webcam Driver architecture</title>
+  <desc id="desc">Renderer, preload, main process, and operating system integrations.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#f2f5f1"/>
+      <stop offset="100%" stop-color="#dce7e1"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#eef4f0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#0f201e" flood-opacity="0.14"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#165d55"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="700" fill="url(#bg)"/>
+  <text x="70" y="86" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="42" font-weight="700">Virtual Webcam Driver</text>
+  <text x="70" y="122" fill="#5a6d69" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="18">Renderer, orchestration, and Linux integration in one deterministic control loop.</text>
+
+  <rect x="70" y="180" rx="28" ry="28" width="250" height="140" fill="url(#card)" stroke="#dae5de" filter="url(#shadow)"/>
+  <text x="100" y="228" fill="#165d55" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="13" font-weight="700" letter-spacing="2">UI</text>
+  <text x="100" y="270" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="32" font-weight="700">Renderer</text>
+  <text x="100" y="300" fill="#5a6d69" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="18">Preview, profiles, status,</text>
+  <text x="100" y="325" fill="#5a6d69" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="18">logs panel, and actions</text>
+
+  <rect x="370" y="180" rx="28" ry="28" width="220" height="140" fill="url(#card)" stroke="#dae5de" filter="url(#shadow)"/>
+  <text x="400" y="228" fill="#165d55" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="13" font-weight="700" letter-spacing="2">SECURE BRIDGE</text>
+  <text x="400" y="270" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="30" font-weight="700">Preload</text>
+  <text x="400" y="300" fill="#5a6d69" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="18">IPC surface only</text>
+
+  <rect x="640" y="140" rx="30" ry="30" width="270" height="220" fill="url(#card)" stroke="#dae5de" filter="url(#shadow)"/>
+  <text x="672" y="188" fill="#165d55" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="13" font-weight="700" letter-spacing="2">ORCHESTRATION</text>
+  <text x="672" y="230" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="32" font-weight="700">Main Process</text>
+  <text x="672" y="266" fill="#5a6d69" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="18">Network scan</text>
+  <text x="672" y="292" fill="#5a6d69" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="18">State persistence</text>
+  <text x="672" y="318" fill="#5a6d69" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="18">Driver process control</text>
+  <text x="672" y="344" fill="#5a6d69" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="18">Journal and OBS hooks</text>
+
+  <rect x="640" y="420" rx="28" ry="28" width="230" height="120" fill="url(#card)" stroke="#dae5de" filter="url(#shadow)"/>
+  <text x="670" y="466" fill="#165d55" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="13" font-weight="700" letter-spacing="2">RUNTIME</text>
+  <text x="670" y="506" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="30" font-weight="700">bin/start.sh</text>
+  <text x="670" y="532" fill="#5a6d69" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="18">Profile-aware launch wrapper</text>
+
+  <rect x="950" y="90" rx="28" ry="28" width="180" height="120" fill="url(#card)" stroke="#dae5de" filter="url(#shadow)"/>
+  <text x="980" y="136" fill="#165d55" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="13" font-weight="700" letter-spacing="2">DEVICE</text>
+  <text x="980" y="176" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="28" font-weight="700">DroidCam</text>
+
+  <rect x="950" y="250" rx="28" ry="28" width="180" height="120" fill="url(#card)" stroke="#dae5de" filter="url(#shadow)"/>
+  <text x="980" y="296" fill="#165d55" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="13" font-weight="700" letter-spacing="2">OBS</text>
+  <text x="980" y="336" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="28" font-weight="700">Launcher</text>
+
+  <rect x="950" y="410" rx="28" ry="28" width="180" height="120" fill="url(#card)" stroke="#dae5de" filter="url(#shadow)"/>
+  <text x="980" y="456" fill="#165d55" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="13" font-weight="700" letter-spacing="2">TELEMETRY</text>
+  <text x="980" y="496" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="28" font-weight="700">journalctl</text>
+
+  <rect x="370" y="420" rx="28" ry="28" width="220" height="120" fill="url(#card)" stroke="#dae5de" filter="url(#shadow)"/>
+  <text x="400" y="466" fill="#165d55" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="13" font-weight="700" letter-spacing="2">STATE</text>
+  <text x="400" y="506" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="30" font-weight="700">Config Files</text>
+  <text x="400" y="532" fill="#5a6d69" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="18">profiles.json and settings.json</text>
+
+  <path d="M 320 250 C 338 250 352 250 370 250" stroke="#165d55" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 590 250 C 610 250 620 250 640 250" stroke="#165d55" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 775 360 C 775 390 775 398 775 420" stroke="#165d55" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 910 210 C 930 200 935 188 950 170" stroke="#165d55" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 910 260 C 930 280 935 292 950 310" stroke="#165d55" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 870 470 C 905 470 922 470 950 470" stroke="#165d55" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 640 490 C 618 490 610 490 590 490" stroke="#165d55" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+</svg>

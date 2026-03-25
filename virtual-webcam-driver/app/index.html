@@ -1,17 +1,146 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Virtual Webcam</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Webcam Driver</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body style="font-family:sans-serif; text-align:center; padding:40px;">
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">LAN SOURCE CONTROL</p>
+        <h1>Virtual Webcam Driver</h1>
+        <p class="subtitle">
+          A deterministic Linux control surface for DroidCam with profile-aware launch, live preview,
+          journal-backed telemetry, and one-click OBS handoff.
+        </p>
+      </div>
+      <div class="health-pill" id="appHealth">Idle</div>
+    </header>
 
-  <h2>Virtual Webcam Driver</h2>
+    <main class="layout">
+      <section class="left-rail">
+        <article class="card">
+          <div class="card-header">
+            <div>
+              <p class="card-kicker">Discovery</p>
+              <h2>Source</h2>
+            </div>
+            <button id="scanButton" class="ghost">Auto Detect</button>
+          </div>
 
-  <button onclick="start()">Start</button>
-  <button onclick="stop()">Stop</button>
+          <div class="input-grid">
+            <label>
+              <span>Host</span>
+              <input id="hostInput" type="text" placeholder="192.168.1.87">
+            </label>
+            <label>
+              <span>Port</span>
+              <input id="portInput" type="number" min="1" max="65535" placeholder="4747">
+            </label>
+          </div>
 
-  <p id="status">Status: Idle</p>
+          <label class="full-width">
+            <span>Video Device</span>
+            <input id="videoDeviceInput" type="text" placeholder="/dev/video2 (optional)">
+          </label>
 
+          <p class="hint" id="scanMeta">Last scan: pending</p>
+          <div class="source-list" id="sourcesList"></div>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <div>
+              <p class="card-kicker">Runtime</p>
+              <h2>Profiles</h2>
+            </div>
+            <span class="hint" id="profileNotes"></span>
+          </div>
+          <div class="profile-list" id="profileList"></div>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <div>
+              <p class="card-kicker">Control</p>
+              <h2>Actions</h2>
+            </div>
+          </div>
+          <div class="action-row">
+            <button id="startButton" class="primary">Start Driver</button>
+            <button id="stopButton" class="ghost">Stop</button>
+            <button id="obsButton" class="accent">Launch OBS</button>
+          </div>
+          <p class="hint status-inline" id="actionSummary">Ready.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <div>
+              <p class="card-kicker">Monitoring</p>
+              <h2>Status</h2>
+            </div>
+          </div>
+          <div class="status-grid">
+            <div>
+              <span>Driver</span>
+              <strong id="driverState">Stopped</strong>
+            </div>
+            <div>
+              <span>Preview</span>
+              <strong id="previewState">idle</strong>
+            </div>
+            <div>
+              <span>Service</span>
+              <strong id="serviceState">Not installed</strong>
+            </div>
+            <div>
+              <span>Profile</span>
+              <strong id="profileState">Recording</strong>
+            </div>
+            <div>
+              <span>Target</span>
+              <strong id="targetState">Not selected</strong>
+            </div>
+            <div>
+              <span>Tooling</span>
+              <strong id="capabilityState">Checking</strong>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="main-stage">
+        <article class="card preview-card">
+          <div class="card-header">
+            <div>
+              <p class="card-kicker">Preview</p>
+              <h2>Live Feed</h2>
+            </div>
+            <span class="hint endpoint-label" id="previewUrlLabel">No endpoint selected</span>
+          </div>
+          <div class="preview-frame">
+            <img id="previewImage" alt="Live DroidCam preview">
+            <div class="preview-overlay" id="previewOverlay">No preview source selected.</div>
+          </div>
+        </article>
+
+        <article class="card logs-card">
+          <div class="card-header">
+            <div>
+              <p class="card-kicker">Telemetry</p>
+              <h2>Logs</h2>
+            </div>
+            <span class="hint" id="journalMeta">virtual-webcam-driver.service</span>
+          </div>
+          <pre id="logsPanel" class="logs-panel"></pre>
+        </article>
+      </section>
+    </main>
+  </div>
   <script src="renderer.js"></script>
 </body>
 </html>

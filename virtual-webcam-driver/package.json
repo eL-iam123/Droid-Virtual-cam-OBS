@@ -4,9 +4,9 @@
   "description": "Electron control surface for DroidCam on Linux with preview, status monitoring, profiles, logs, and OBS launch.",
   "main": "app/main.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron .",
-    "capture:screenshot": "mkdir -p docs/screenshots && VIRTUAL_WEBCAM_DRIVER_DEMO=1 VIRTUAL_WEBCAM_DRIVER_CAPTURE_PATH=docs/screenshots/dashboard.png electron ."
+    "start": "env -u ELECTRON_RUN_AS_NODE electron .",
+    "dev": "env -u ELECTRON_RUN_AS_NODE electron .",
+    "capture:screenshot": "mkdir -p docs/screenshots && env -u ELECTRON_RUN_AS_NODE VIRTUAL_WEBCAM_DRIVER_DEMO=1 VIRTUAL_WEBCAM_DRIVER_CAPTURE_PATH=docs/screenshots/dashboard.png electron --no-sandbox ."
   },
   "keywords": [
     "electron",
@@ -18,6 +18,6 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^37.2.0"
+    "electron": "^37.10.3"
   }
 }

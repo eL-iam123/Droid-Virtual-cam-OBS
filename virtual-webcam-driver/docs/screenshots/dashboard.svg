@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">Virtual Webcam Driver dashboard screenshot</title>
+  <desc id="desc">A stylized screenshot of the Electron dashboard showing source selection, live preview, and logs.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#eef3ef"/>
+      <stop offset="100%" stop-color="#d9e4de"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#eef5f1"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="20" stdDeviation="24" flood-color="#0f201e" flood-opacity="0.14"/>
+    </filter>
+  </defs>
+  <rect width="1440" height="900" fill="url(#bg)"/>
+  <circle cx="170" cy="140" r="180" fill="#c66a24" opacity="0.12"/>
+  <circle cx="1240" cy="110" r="200" fill="#165d55" opacity="0.12"/>
+  <text x="72" y="78" fill="#165d55" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="13" font-weight="700" letter-spacing="3">LAN SOURCE CONTROL</text>
+  <text x="72" y="138" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="56" font-weight="700">Virtual Webcam Driver</text>
+  <text x="72" y="174" fill="#5a6d69" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="20">Clean orchestration for DroidCam, logs, profiles, and OBS.</text>
+  <rect x="1210" y="78" width="150" height="56" rx="28" fill="#d8e8e3"/>
+  <text x="1252" y="114" fill="#165d55" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="22" font-weight="700">LIVE</text>
+
+  <rect x="64" y="224" width="392" height="600" rx="30" fill="url(#panel)" filter="url(#shadow)"/>
+  <rect x="492" y="224" width="884" height="390" rx="30" fill="url(#panel)" filter="url(#shadow)"/>
+  <rect x="492" y="644" width="884" height="180" rx="30" fill="url(#panel)" filter="url(#shadow)"/>
+
+  <text x="92" y="274" fill="#165d55" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="12" font-weight="700" letter-spacing="2">DISCOVERY</text>
+  <text x="92" y="310" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="34" font-weight="700">Source</text>
+  <rect x="300" y="270" width="122" height="42" rx="14" fill="#edf3f0"/>
+  <text x="325" y="297" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="18" font-weight="600">Auto Detect</text>
+
+  <rect x="92" y="340" width="158" height="56" rx="18" fill="#ffffff" stroke="#dae5de"/>
+  <rect x="264" y="340" width="102" height="56" rx="18" fill="#ffffff" stroke="#dae5de"/>
+  <text x="110" y="330" fill="#5a6d69" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="13" letter-spacing="1">HOST</text>
+  <text x="282" y="330" fill="#5a6d69" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="13" letter-spacing="1">PORT</text>
+  <text x="116" y="376" fill="#10201e" font-family="IBM Plex Mono, Menlo, monospace" font-size="20">192.168.1.87</text>
+  <text x="296" y="376" fill="#10201e" font-family="IBM Plex Mono, Menlo, monospace" font-size="20">4747</text>
+
+  <rect x="92" y="428" width="302" height="66" rx="20" fill="#edf7f5" stroke="#b8d7cf"/>
+  <text x="114" y="458" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="22" font-weight="700">DroidCam 192.168.1.87</text>
+  <text x="114" y="483" fill="#5a6d69" font-family="IBM Plex Mono, Menlo, monospace" font-size="16">192.168.1.87:4747</text>
+
+  <text x="92" y="545" fill="#165d55" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="12" font-weight="700" letter-spacing="2">RUNTIME</text>
+  <text x="92" y="582" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="34" font-weight="700">Profiles</text>
+  <rect x="92" y="612" width="302" height="70" rx="20" fill="#edf7f5" stroke="#b8d7cf"/>
+  <rect x="92" y="694" width="302" height="70" rx="20" fill="#ffffff" stroke="#dae5de"/>
+  <text x="118" y="644" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="24" font-weight="700">Recording</text>
+  <text x="118" y="669" fill="#5a6d69" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="16">1920x1080 · audio</text>
+  <text x="118" y="726" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="24" font-weight="700">Gaming</text>
+  <text x="118" y="751" fill="#5a6d69" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="16">1280x720 · video only</text>
+
+  <text x="526" y="274" fill="#165d55" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="12" font-weight="700" letter-spacing="2">PREVIEW</text>
+  <text x="526" y="310" fill="#10201e" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="34" font-weight="700">Live Feed</text>
+  <text x="1030" y="310" fill="#5a6d69" font-family="IBM Plex Mono, Menlo, monospace" font-size="18">http://192.168.1.87:4747/video</text>
+
+  <rect x="526" y="336" width="816" height="236" rx="24" fill="#10201e"/>
+  <circle cx="1180" cy="380" r="98" fill="#1f5a51" opacity="0.35"/>
+  <circle cx="640" cy="520" r="116" fill="#c66a24" opacity="0.16"/>
+  <rect x="552" y="356" width="764" height="196" rx="20" fill="#183934"/>
+  <path d="M 580 510 C 700 410 770 448 860 372 C 952 294 1096 324 1280 250" fill="none" stroke="#f0a15f" stroke-width="7" stroke-linecap="round"/>
+  <path d="M 580 472 C 684 390 768 398 860 330 C 976 244 1092 284 1288 212" fill="none" stroke="#4fc2af" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+  <circle cx="736" cy="410" r="56" fill="#f2f5f1" opacity="0.12"/>
+  <rect x="556" y="364" width="222" height="54" rx="16" fill="#0e1817" opacity="0.88"/>
+  <text x="582" y="398" fill="#f7fbf9" font-family="Avenir Next, Segoe UI, Helvetica Neue, sans-serif" font-size="22" font-weight="700">Preview Connected</text>
+
+  <rect x="526" y="644" width="816" height="140" rx="24" fill="#10201e"/>
+  <text x="554" y="684" fill="#9cc6be" font-family="IBM Plex Mono, Menlo, monospace" font-size="16">2026-03-25T11:42:01.291Z [INFO ] scan: Network scan completed with 1 candidate(s)</text>
+  <text x="554" y="714" fill="#dce8e4" font-family="IBM Plex Mono, Menlo, monospace" font-size="16">2026-03-25T11:42:05.008Z [INFO ] process: Launching recording profile against 192.168.1.87:4747</text>
+  <text x="554" y="744" fill="#dce8e4" font-family="IBM Plex Mono, Menlo, monospace" font-size="16">2026-03-25T11:42:05.019Z [INFO ] journal: Following virtual-webcam-driver.service with journalctl</text>
+</svg>

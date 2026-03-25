@@ -1,0 +1,9 @@
+flowchart LR
+  UI[Renderer UI] --> IPC[Preload IPC bridge]
+  IPC --> Main[Electron main process]
+  Main --> Scan[LAN scan over HTTP]
+  Main --> Start[bin/start.sh]
+  Start --> DroidCam[droidcam-cli]
+  Main --> Journal[journalctl --user -f]
+  Main --> OBS[obs]
+  Main --> Config[config/settings.json and profiles.json]
