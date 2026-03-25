@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld('api', {
   stop: () => ipcRenderer.invoke('stop-webcam'),
   launchObs: () => ipcRenderer.invoke('launch-obs'),
   setPreviewStatus: (status) => ipcRenderer.invoke('set-preview-status', status),
+  minimizeWindow: () => ipcRenderer.invoke('window-minimize'),
+  toggleMaximizeWindow: () => ipcRenderer.invoke('window-toggle-maximize'),
   onState: (handler) => {
     const listener = (_event, state) => handler(state);
     ipcRenderer.on('state-updated', listener);

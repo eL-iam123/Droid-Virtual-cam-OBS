@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Virtual Webcam Driver
+Comment=Launch the Virtual Webcam Driver control surface
+Exec=/bin/bash -lc 'cd "/home/oghenedoro/Projects/Droid Virtual cam OBS /virtual-webcam-driver" && "./bin/launch-ui.sh"'
+Path=/home/oghenedoro/Projects/Droid Virtual cam OBS /virtual-webcam-driver
+Terminal=false
+StartupNotify=true
+Categories=AudioVideo;Video;
+Keywords=virtual webcam;droidcam;obs;electron;

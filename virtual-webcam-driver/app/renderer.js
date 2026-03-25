@@ -86,8 +86,10 @@ function renderSources(state) {
       <span>${escapeHtml(`${source.host}:${source.port}`)}</span>
     `;
     button.addEventListener('click', async () => {
-      await window.api.updateSettings({ host: source.host, port: source.port });
+      const nextState = await window.api.updateSettings({ host: source.host, port: source.port });
+      render(nextState);
       setActionMessage(`Selected ${source.host}:${source.port}.`);
+      await window.api.setPreviewStatus('connecting');
     });
     elements.sourcesList.appendChild(button);
   }
@@ -95,6 +97,37 @@ function renderSources(state) {
   elements.scanMeta.textContent = state.lastScanAt
     ? `Last scan: ${formatTimestamp(state.lastScanAt)}`
     : 'Last scan: pending';
+}
+
+function renderVideoDevices(state) {
+  elements.videoDevicesList.innerHTML = '';
+
+  if (!state.videoDevices.length) {
+    const empty = document.createElement('div');
+    empty.className = 'device-empty';
+    empty.textContent = 'No V4L2 loopback device detected. Load v4l2loopback, then point OBS to that /dev/videoN device.';
+    elements.videoDevicesList.appendChild(empty);
+  }
+
+  for (const device of state.videoDevices) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `device-chip ${state.outputDevice?.path === device.path ? 'is-selected' : ''}`;
+    button.innerHTML = `
+      <span>${escapeHtml(device.path)}</span>
+      <span>${escapeHtml(device.label)}</span>
+    `;
+    button.addEventListener('click', async () => {
+      const nextState = await window.api.updateSettings({ videoDevice: device.path });
+      render(nextState);
+      setActionMessage(`Output device pinned to ${device.path}.`, 'success');
+    });
+    elements.videoDevicesList.appendChild(button);
+  }
+
+  elements.deviceMeta.textContent = state.outputDevice
+    ? `OBS should use ${state.outputDevice.path}${state.outputDevice.label ? ` · ${state.outputDevice.label}` : ''}`
+    : 'Output device missing';
 }
 
 function renderLogs(state) {
@@ -130,7 +163,7 @@ function renderPreview(state) {
 function renderStatus(state) {
   elements.hostInput.value = state.settings.host;
   elements.portInput.value = String(state.settings.port);
-  elements.videoDeviceInput.value = state.settings.videoDevice;
+  elements.videoDeviceInput.value = state.settings.videoDevice || state.outputDevice?.path || '';
   elements.appHealth.textContent = healthLabel(state);
   elements.driverState.textContent = state.running ? `Running${state.processPid ? ` · PID ${state.processPid}` : ''}` : 'Stopped';
   elements.previewState.textContent = state.previewStatus;
@@ -138,10 +171,15 @@ function renderStatus(state) {
   elements.profileState.textContent = `${state.profile.label} · ${state.profile.size}`;
   elements.targetState.textContent = state.settings.host ? `${state.settings.host}:${state.settings.port}` : 'Not selected';
   elements.capabilityState.textContent = state.capabilities.hasObs && state.capabilities.hasJournalctl && state.capabilities.hasDroidCamCli ? 'Ready' : 'Partial';
+  elements.outputState.textContent = state.outputDevice ? `${state.outputDevice.path} · ${state.outputDevice.label}` : 'Missing';
+  elements.backendState.textContent = state.driverBackend;
   elements.startButton.disabled = state.running;
   elements.stopButton.disabled = !state.running;
   elements.scanButton.disabled = state.scanInFlight;
   elements.obsButton.disabled = !state.capabilities.hasObs;
+  elements.windowMinimize.disabled = !state.window.canMinimize;
+  elements.windowMaximize.disabled = !state.window.canMaximize;
+  elements.windowMaximize.textContent = state.window.isMaximized ? 'Restore' : 'Maximize';
   elements.appHealth.dataset.health = state.running ? 'live' : state.scanInFlight ? 'busy' : 'idle';
 }
 
@@ -149,6 +187,7 @@ function render(state) {
   stateStore.current = state;
   renderProfileButtons(state);
   renderSources(state);
+  renderVideoDevices(state);
   renderPreview(state);
   renderStatus(state);
   renderLogs(state);
@@ -164,7 +203,7 @@ async function startDriver() {
     setActionMessage('Starting driver…');
     const state = await window.api.start();
     render(state);
-    setActionMessage(`Driver launched with ${state.profile.label}.`, 'success');
+    setActionMessage(`Driver launched on ${state.outputDevice?.path || 'the selected output device'}.`, 'success');
   } catch (error) {
     setActionMessage(error.message, 'error');
   }
@@ -197,7 +236,7 @@ async function launchObs() {
     setActionMessage('Launching OBS…');
     const state = await window.api.launchObs();
     render(state);
-    setActionMessage('OBS launched.', 'success');
+    setActionMessage(`OBS launched. Use Video Capture Device -> ${state.outputDevice?.path || 'the selected /dev/videoN device'}.`, 'success');
   } catch (error) {
     setActionMessage(error.message, 'error');
   }
@@ -217,6 +256,13 @@ function bindEvents() {
   elements.startButton.addEventListener('click', startDriver);
   elements.stopButton.addEventListener('click', stopDriver);
   elements.obsButton.addEventListener('click', launchObs);
+  elements.windowMinimize.addEventListener('click', () => {
+    window.api.minimizeWindow();
+  });
+  elements.windowMaximize.addEventListener('click', async () => {
+    const state = await window.api.toggleMaximizeWindow();
+    render(state);
+  });
   elements.hostInput.addEventListener('change', syncSettings);
   elements.portInput.addEventListener('change', syncSettings);
   elements.videoDeviceInput.addEventListener('change', syncSettings);
@@ -234,6 +280,8 @@ function bindEvents() {
 
 function captureElements() {
   elements.appHealth = $('appHealth');
+  elements.windowMinimize = $('windowMinimize');
+  elements.windowMaximize = $('windowMaximize');
   elements.scanButton = $('scanButton');
   elements.startButton = $('startButton');
   elements.stopButton = $('stopButton');
@@ -242,7 +290,9 @@ function captureElements() {
   elements.portInput = $('portInput');
   elements.videoDeviceInput = $('videoDeviceInput');
   elements.scanMeta = $('scanMeta');
+  elements.deviceMeta = $('deviceMeta');
   elements.sourcesList = $('sourcesList');
+  elements.videoDevicesList = $('videoDevicesList');
   elements.profileList = $('profileList');
   elements.profileNotes = $('profileNotes');
   elements.actionSummary = $('actionSummary');
@@ -252,6 +302,8 @@ function captureElements() {
   elements.profileState = $('profileState');
   elements.targetState = $('targetState');
   elements.capabilityState = $('capabilityState');
+  elements.outputState = $('outputState');
+  elements.backendState = $('backendState');
   elements.previewImage = $('previewImage');
   elements.previewOverlay = $('previewOverlay');
   elements.previewUrlLabel = $('previewUrlLabel');

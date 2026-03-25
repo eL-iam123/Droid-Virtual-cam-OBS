@@ -17,7 +17,13 @@
           journal-backed telemetry, and one-click OBS handoff.
         </p>
       </div>
-      <div class="health-pill" id="appHealth">Idle</div>
+      <div class="hero-actions">
+        <div class="health-pill" id="appHealth">Idle</div>
+        <div class="window-actions">
+          <button id="windowMinimize" class="window-button" type="button">Minimize</button>
+          <button id="windowMaximize" class="window-button" type="button">Maximize</button>
+        </div>
+      </div>
     </header>
 
     <main class="layout">
@@ -49,6 +55,8 @@
 
           <p class="hint" id="scanMeta">Last scan: pending</p>
           <div class="source-list" id="sourcesList"></div>
+          <p class="hint" id="deviceMeta">Output device missing</p>
+          <div class="device-list" id="videoDevicesList"></div>
         </article>
 
         <article class="card">
@@ -108,6 +116,14 @@
             <div>
               <span>Tooling</span>
               <strong id="capabilityState">Checking</strong>
+            </div>
+            <div>
+              <span>Output</span>
+              <strong id="outputState">Missing</strong>
+            </div>
+            <div>
+              <span>Backend</span>
+              <strong id="backendState">droidcam-cli</strong>
             </div>
           </div>
         </article>

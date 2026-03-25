@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const fs = require('fs');
 const http = require('http');
 const os = require('os');
@@ -13,6 +13,7 @@ const PROFILES_PATH = path.join(CONFIG_DIR, 'profiles.json');
 const START_SCRIPT_PATH = path.join(ROOT_DIR, 'bin', 'start.sh');
 const DEMO_FEED_PATH = path.join(ROOT_DIR, 'docs', 'assets', 'demo-feed.svg');
 const SERVICE_UNIT = 'virtual-webcam-driver.service';
+const VIDEO_CLASS_DIR = '/sys/class/video4linux';
 const LOG_LIMIT = 400;
 const DEMO_MODE = process.env.VIRTUAL_WEBCAM_DRIVER_DEMO === '1';
 const CAPTURE_PATH = process.env.VIRTUAL_WEBCAM_DRIVER_CAPTURE_PATH || '';
@@ -31,6 +32,9 @@ const runtime = {
   lastScanAt: null,
   previewStatus: DEMO_MODE ? 'online' : 'idle',
   demoRunning: DEMO_MODE,
+  driverBackend: DEMO_MODE ? 'demo' : 'idle',
+  manualWindowMaximized: false,
+  windowRestoreBounds: null,
   serviceStatus: {
     available: false,
     activeState: 'unknown',
@@ -44,6 +48,23 @@ const runtime = {
 
 function ensureDirectory(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
+}
+
+function pathExists(targetPath) {
+  try {
+    fs.accessSync(targetPath, fs.constants.F_OK);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+function readText(filePath) {
+  try {
+    return fs.readFileSync(filePath, 'utf8').trim();
+  } catch (error) {
+    return '';
+  }
 }
 
 function readJson(filePath, fallbackValue) {
@@ -98,6 +119,7 @@ function loadSettings() {
 function detectCapabilities() {
   return {
     droidcamCli: resolveCommand('droidcam-cli'),
+    ffmpeg: resolveCommand('ffmpeg'),
     journalctl: resolveCommand('journalctl'),
     systemctl: resolveCommand('systemctl'),
     obs: resolveCommand('obs')
@@ -125,6 +147,153 @@ function getProfile(profileId = settings.selectedProfile) {
   }
   const firstId = Object.keys(profiles)[0];
   return { id: firstId, ...profiles[firstId] };
+}
+
+function buildWindowState() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return {
+      canMinimize: false,
+      canMaximize: false,
+      isMaximized: false
+    };
+  }
+
+  return {
+    canMinimize: true,
+    canMaximize: true,
+    isMaximized: runtime.manualWindowMaximized || mainWindow.isMaximized()
+  };
+}
+
+function markWindowRestored() {
+  runtime.manualWindowMaximized = false;
+  runtime.windowRestoreBounds = null;
+}
+
+function applyManualMaximize() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+
+  runtime.windowRestoreBounds = mainWindow.getBounds();
+  const display = screen.getDisplayMatching(runtime.windowRestoreBounds);
+  mainWindow.setBounds(display.workArea);
+  runtime.manualWindowMaximized = true;
+  broadcastState();
+}
+
+function restoreManualMaximize() {
+  if (!mainWindow || mainWindow.isDestroyed() || !runtime.manualWindowMaximized) {
+    return;
+  }
+
+  if (runtime.windowRestoreBounds) {
+    mainWindow.setBounds(runtime.windowRestoreBounds);
+  }
+  markWindowRestored();
+  broadcastState();
+}
+
+function getInitialWindowBounds() {
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { workArea } = primaryDisplay;
+
+  if (runtime.captureRequested) {
+    return {
+      width: 1440,
+      height: 1180,
+      x: workArea.x,
+      y: workArea.y
+    };
+  }
+
+  const width = Math.max(
+    Math.min(workArea.width - 48, 1440),
+    Math.min(workArea.width, 880)
+  );
+  const height = Math.max(
+    Math.min(workArea.height - 48, 920),
+    Math.min(workArea.height, 620)
+  );
+  const x = workArea.x + Math.max(0, Math.floor((workArea.width - width) / 2));
+  const y = workArea.y + Math.max(0, Math.floor((workArea.height - height) / 2));
+
+  return { width, height, x, y };
+}
+
+function listVideoDevices() {
+  const devices = [];
+
+  if (!pathExists(VIDEO_CLASS_DIR)) {
+    return devices;
+  }
+
+  for (const entry of fs.readdirSync(VIDEO_CLASS_DIR)) {
+    if (!/^video\d+$/.test(entry)) {
+      continue;
+    }
+
+    const devicePath = `/dev/${entry}`;
+    const sysPath = path.join(VIDEO_CLASS_DIR, entry);
+    const name = readText(path.join(sysPath, 'name')) || entry;
+    let deviceRealPath = '';
+
+    try {
+      deviceRealPath = fs.realpathSync(path.join(sysPath, 'device'));
+    } catch (error) {
+      deviceRealPath = '';
+    }
+
+    const isVirtual = deviceRealPath.includes('/devices/virtual/');
+    const isLoopback = isVirtual || /loopback|dummy|virtual|obs|droidcam/i.test(name);
+
+    devices.push({
+      path: devicePath,
+      label: name,
+      isVirtual,
+      isLoopback
+    });
+  }
+
+  return devices.sort((left, right) => left.path.localeCompare(right.path, undefined, { numeric: true }));
+}
+
+function resolveVideoOutput() {
+  const devices = listVideoDevices();
+  const matchingConfigured = settings.videoDevice
+    ? devices.find((device) => device.path === settings.videoDevice)
+    : null;
+
+  let selected = matchingConfigured || devices.find((device) => device.isLoopback) || null;
+
+  if (!selected && settings.videoDevice && pathExists(settings.videoDevice)) {
+    selected = {
+      path: settings.videoDevice,
+      label: path.basename(settings.videoDevice),
+      isVirtual: false,
+      isLoopback: /video\d+/.test(path.basename(settings.videoDevice))
+    };
+  }
+
+  return {
+    devices,
+    selected
+  };
+}
+
+function ensureVideoOutput() {
+  const output = resolveVideoOutput();
+
+  if (!output.selected) {
+    throw new Error('No V4L2 loopback device was detected. Load v4l2loopback and point OBS at the selected /dev/videoN device.');
+  }
+
+  if (!settings.videoDevice || settings.videoDevice !== output.selected.path) {
+    settings.videoDevice = output.selected.path;
+    persistSettings();
+  }
+
+  return output.selected;
 }
 
 function logEntry(source, level, message) {
@@ -169,6 +338,7 @@ function isDriverRunning() {
 
 function buildState() {
   const activeProfile = getProfile();
+  const output = resolveVideoOutput();
   return {
     appTitle: 'Virtual Webcam Driver',
     demoMode: DEMO_MODE,
@@ -189,8 +359,13 @@ function buildState() {
     lastScanAt: runtime.lastScanAt,
     logs: runtime.logs,
     serviceStatus: runtime.serviceStatus,
+    videoDevices: output.devices,
+    outputDevice: output.selected,
+    driverBackend: runtime.driverBackend,
+    window: buildWindowState(),
     capabilities: {
       hasDroidCamCli: Boolean(capabilities.droidcamCli),
+      hasFfmpeg: Boolean(capabilities.ffmpeg),
       hasJournalctl: Boolean(capabilities.journalctl),
       hasSystemctl: Boolean(capabilities.systemctl),
       hasObs: Boolean(capabilities.obs)
@@ -346,7 +521,7 @@ function stopJournalStream() {
   }
 }
 
-function buildStartEnvironment() {
+function buildStartEnvironment(videoDevicePath) {
   const activeProfile = getProfile();
   return {
     ...process.env,
@@ -356,7 +531,7 @@ function buildStartEnvironment() {
     DROIDCAM_PORT: String(settings.port),
     DROIDCAM_SIZE: activeProfile.size,
     ENABLE_AUDIO: activeProfile.enableAudio ? '1' : '0',
-    VIDEO_DEVICE: settings.videoDevice
+    VIDEO_DEVICE: videoDevicePath || settings.videoDevice
   };
 }
 
@@ -370,9 +545,11 @@ async function startWebcam() {
   if (settings.sourceMode === 'wifi' && !settings.host && !DEMO_MODE) {
     throw new Error('Select or detect a DroidCam host before starting the driver.');
   }
+  const outputDevice = DEMO_MODE ? null : ensureVideoOutput();
 
   if (DEMO_MODE) {
     runtime.demoRunning = true;
+    runtime.driverBackend = 'demo';
     logEntry('process', 'info', `Demo start for profile=${settings.selectedProfile} target=${settings.host || '192.168.1.87'}:${settings.port}`);
     runtime.previewStatus = 'online';
     broadcastState();
@@ -381,13 +558,14 @@ async function startWebcam() {
 
   const child = spawn('/bin/bash', [START_SCRIPT_PATH], {
     cwd: ROOT_DIR,
-    env: buildStartEnvironment(),
+    env: buildStartEnvironment(outputDevice?.path),
     stdio: ['ignore', 'pipe', 'pipe']
   });
 
   runtime.child = child;
+  runtime.driverBackend = 'droidcam-cli';
   runtime.previewStatus = settings.host ? 'connecting' : 'idle';
-  logEntry('process', 'info', `Launching ${settings.selectedProfile} profile against ${settings.host}:${settings.port}`);
+  logEntry('process', 'info', `Launching ${settings.selectedProfile} profile against ${settings.host}:${settings.port} on ${outputDevice.path}`);
   broadcastState();
 
   child.stdout.on('data', (chunk) => logChunk('process', 'info', chunk));
@@ -396,6 +574,7 @@ async function startWebcam() {
     if (runtime.child === child) {
       runtime.child = null;
     }
+    runtime.driverBackend = 'idle';
     logEntry('process', code === 0 ? 'info' : 'error', `Driver exited code=${code ?? 'n/a'} signal=${signal ?? 'n/a'}`);
     runtime.previewStatus = 'idle';
     broadcastState();
@@ -407,6 +586,7 @@ async function startWebcam() {
 async function stopWebcam() {
   if (DEMO_MODE) {
     runtime.demoRunning = false;
+    runtime.driverBackend = 'idle';
     logEntry('process', 'info', 'Demo stop issued');
     runtime.previewStatus = 'idle';
     broadcastState();
@@ -437,12 +617,19 @@ async function launchObs() {
     return buildState();
   }
 
+  const outputDevice = ensureVideoOutput();
+
+  if (!isDriverRunning() && settings.host) {
+    await startWebcam();
+    logEntry('obs', 'info', `Driver auto-started for OBS using ${outputDevice.path}`);
+  }
+
   const obsProcess = spawn(capabilities.obs, [], {
     detached: true,
     stdio: 'ignore'
   });
   obsProcess.unref();
-  logEntry('obs', 'info', 'OBS launched');
+  logEntry('obs', 'info', `OBS launched. Set Video Capture Device to ${outputDevice.path}.`);
   return buildState();
 }
 
@@ -640,6 +827,7 @@ async function scanNetwork() {
 
 function seedDemoState() {
   runtime.demoRunning = true;
+  runtime.driverBackend = 'demo';
   settings = sanitizeSettings({
     ...settings,
     host: '192.168.1.87',
@@ -676,15 +864,19 @@ async function captureWindowIfRequested() {
 }
 
 function createWindow() {
-  const initialHeight = runtime.captureRequested ? 1180 : 960;
+  const initialBounds = getInitialWindowBounds();
   mainWindow = new BrowserWindow({
-    width: 1440,
-    height: initialHeight,
-    minWidth: 1180,
-    minHeight: 760,
+    x: initialBounds.x,
+    y: initialBounds.y,
+    width: initialBounds.width,
+    height: initialBounds.height,
+    minWidth: 820,
+    minHeight: 580,
     show: !runtime.captureRequested,
     backgroundColor: '#10201e',
     title: 'Virtual Webcam Driver',
+    autoHideMenuBar: true,
+    useContentSize: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -697,6 +889,20 @@ function createWindow() {
   if (!runtime.captureRequested) {
     mainWindow.once('ready-to-show', () => mainWindow.show());
   }
+
+  mainWindow.on('maximize', () => {
+    runtime.manualWindowMaximized = false;
+    runtime.windowRestoreBounds = null;
+    broadcastState();
+  });
+  mainWindow.on('unmaximize', () => {
+    runtime.manualWindowMaximized = false;
+    broadcastState();
+  });
+  mainWindow.on('restore', () => {
+    runtime.manualWindowMaximized = false;
+    broadcastState();
+  });
 
   mainWindow.webContents.on('did-finish-load', () => {
     broadcastState();
@@ -739,6 +945,33 @@ ipcMain.handle('launch-obs', async () => launchObs());
 ipcMain.handle('set-preview-status', async (_event, status) => {
   runtime.previewStatus = ['idle', 'connecting', 'online', 'error'].includes(status) ? status : 'idle';
   broadcastState();
+  return buildState();
+});
+ipcMain.handle('window-minimize', async () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.minimize();
+  }
+  return buildState();
+});
+ipcMain.handle('window-toggle-maximize', async () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (runtime.manualWindowMaximized) {
+      restoreManualMaximize();
+    } else if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      runtime.windowRestoreBounds = mainWindow.getBounds();
+      mainWindow.maximize();
+      setTimeout(() => {
+        if (!mainWindow || mainWindow.isDestroyed()) {
+          return;
+        }
+        if (!mainWindow.isMaximized() && !runtime.manualWindowMaximized) {
+          applyManualMaximize();
+        }
+      }, 120);
+    }
+  }
   return buildState();
 });
 

@@ -73,6 +73,13 @@ npm install
 npm start
 ```
 
+For day-to-day use after the first install, you do not need `npm start`.
+
+- Double-click [`Virtual Webcam Driver.desktop`](/home/oghenedoro/Projects/Droid Virtual cam OBS /virtual-webcam-driver/Virtual Webcam Driver.desktop) from the repo folder, or
+- Run [`bin/launch-ui.sh`](/home/oghenedoro/Projects/Droid Virtual cam OBS /virtual-webcam-driver/bin/launch-ui.sh)
+
+The launcher uses the local Electron binary directly and writes startup logs to `.logs/launcher.log`.
+
 Requirements:
 
 - Linux
