@@ -16,6 +16,10 @@ case "${PROFILE}" in
     ;;
   recording)
     DROIDCAM_SIZE="${DROIDCAM_SIZE:-1920x1080}"
+    ENABLE_AUDIO="${ENABLE_AUDIO:-0}"
+    ;;
+  recording-audio)
+    DROIDCAM_SIZE="${DROIDCAM_SIZE:-1920x1080}"
     ENABLE_AUDIO="${ENABLE_AUDIO:-1}"
     ;;
   low-latency)

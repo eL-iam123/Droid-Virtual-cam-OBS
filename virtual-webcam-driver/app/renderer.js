@@ -181,6 +181,53 @@ function renderStatus(state) {
   elements.windowMaximize.disabled = !state.window.canMaximize;
   elements.windowMaximize.textContent = state.window.isMaximized ? 'Restore' : 'Maximize';
   elements.appHealth.dataset.health = state.running ? 'live' : state.scanInFlight ? 'busy' : 'idle';
+
+  updateOnboarding(state);
+}
+
+function updateOnboarding(state) {
+  if (state.settings.setupCompleted && !elements.onboardingOverlay.classList.contains('is-manual')) {
+    elements.onboardingOverlay.classList.remove('is-visible');
+    return;
+  }
+
+  elements.onboardingOverlay.classList.add('is-visible');
+
+  const checks = [
+    { id: 'checkDroidCam', ready: state.capabilities.hasDroidCamCli },
+    { id: 'checkV4l2', ready: state.capabilities.hasV4l2loopback },
+    { id: 'checkSndAloop', ready: state.capabilities.hasSndAloop },
+    { id: 'checkObs', ready: state.capabilities.hasObs }
+  ];
+
+  for (const check of checks) {
+    const el = $(check.id);
+    if (el) {
+      el.classList.toggle('is-ready', check.ready);
+      const btn = el.querySelector('.setup-btn');
+      if (btn) {
+        btn.style.display = check.ready ? 'none' : 'block';
+      }
+    }
+  }
+}
+
+async function runSetupStep(stepId, btn) {
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+
+  try {
+    const result = await window.api.runSetupStep(stepId);
+    if (!result.ok) {
+      setActionMessage(`Setup failed: ${result.error}`, 'error');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+    const state = await window.api.getState();
+    render(state);
+  }
 }
 
 function render(state) {
@@ -276,6 +323,27 @@ function bindEvents() {
       window.api.setPreviewStatus('error');
     }
   });
+
+  elements.skipSetup.addEventListener('click', async () => {
+    await window.api.updateSettings({ setupCompleted: true });
+    elements.onboardingOverlay.classList.remove('is-visible');
+    elements.onboardingOverlay.classList.remove('is-manual');
+  });
+
+  elements.completeSetup.addEventListener('click', async () => {
+    await window.api.updateSettings({ setupCompleted: true });
+    elements.onboardingOverlay.classList.remove('is-visible');
+    elements.onboardingOverlay.classList.remove('is-manual');
+  });
+
+  document.querySelectorAll('.setup-btn').forEach((btn) => {
+    btn.addEventListener('click', () => runSetupStep(btn.dataset.step, btn));
+  });
+
+  elements.capabilityState.parentElement.addEventListener('click', () => {
+    elements.onboardingOverlay.classList.add('is-visible');
+    elements.onboardingOverlay.classList.add('is-manual');
+  });
 }
 
 function captureElements() {
@@ -309,6 +377,9 @@ function captureElements() {
   elements.previewUrlLabel = $('previewUrlLabel');
   elements.logsPanel = $('logsPanel');
   elements.journalMeta = $('journalMeta');
+  elements.onboardingOverlay = $('onboardingOverlay');
+  elements.skipSetup = $('skipSetup');
+  elements.completeSetup = $('completeSetup');
 }
 
 window.addEventListener('DOMContentLoaded', async () => {

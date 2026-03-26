@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('api', {
   start: () => ipcRenderer.invoke('start-webcam'),
   stop: () => ipcRenderer.invoke('stop-webcam'),
   launchObs: () => ipcRenderer.invoke('launch-obs'),
+  runSetupStep: (stepId) => ipcRenderer.invoke('run-setup-step', stepId),
   setPreviewStatus: (status) => ipcRenderer.invoke('set-preview-status', status),
   minimizeWindow: () => ipcRenderer.invoke('window-minimize'),
   toggleMaximizeWindow: () => ipcRenderer.invoke('window-toggle-maximize'),

@@ -157,6 +157,62 @@
       </section>
     </main>
   </div>
+
+  <div id="onboardingOverlay" class="overlay">
+    <div class="modal card">
+      <div class="card-header">
+        <div>
+          <p class="card-kicker">Initial Configuration</p>
+          <h2>System Setup</h2>
+        </div>
+      </div>
+      <p class="modal-description">
+        Welcome! Let's ensure your Linux system is configured for the best experience with DroidCam and OBS.
+      </p>
+
+      <div class="checklist">
+        <div class="checklist-item" id="checkDroidCam">
+          <div class="check-status"></div>
+          <div class="check-body">
+            <h3>DroidCam CLI</h3>
+            <p>Required to bridge your phone's camera to a virtual device.</p>
+          </div>
+        </div>
+
+        <div class="checklist-item" id="checkV4l2">
+          <div class="check-status"></div>
+          <div class="check-body">
+            <h3>V4L2 Loopback</h3>
+            <p>Required to create a virtual camera device that OBS can see.</p>
+            <button class="setup-btn ghost" data-step="v4l2loopback">Install / Load</button>
+          </div>
+        </div>
+
+        <div class="checklist-item" id="checkSndAloop">
+          <div class="check-status"></div>
+          <div class="check-body">
+            <h3>ALSA Loopback</h3>
+            <p>Required for phone audio. Runs <code>sudo modprobe snd_aloop</code>.</p>
+            <button class="setup-btn ghost" data-step="snd_aloop">Enable Audio</button>
+          </div>
+        </div>
+
+        <div class="checklist-item" id="checkObs">
+          <div class="check-status"></div>
+          <div class="check-body">
+            <h3>OBS Studio</h3>
+            <p>Recommended for using your phone as a webcam.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="skipSetup" class="ghost">Skip for now</button>
+        <button id="completeSetup" class="primary">Get Started</button>
+      </div>
+    </div>
+  </div>
+
   <script src="renderer.js"></script>
 </body>
 </html>

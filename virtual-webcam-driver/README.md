@@ -1,95 +1,72 @@
 # Virtual Webcam Driver
 
-An Electron control surface for Linux that keeps DroidCam, OBS, and system telemetry in one place.
-
-It stays intentionally narrow:
-
-- Live preview in the app via the DroidCam HTTP stream
-- Auto IP detection across local `/24` subnets
-- Three deterministic launch profiles: `gaming`, `recording`, `low-latency`
-- Journal-aware logs panel with local process logs as fallback
-- One-click OBS launch
+Virtual Webcam Driver is a Linux desktop app for previewing DroidCam, selecting an OBS output device, viewing logs, and launching OBS from a single UI.
 
 ![Dashboard screenshot](docs/screenshots/dashboard.png)
 
-## Why This Exists
+## Fast Setup
 
-The usual DroidCam workflow on Linux is fragmented:
-
-- find the phone IP manually
-- start `droidcam-cli` from a shell
-- inspect logs in another terminal
-- open OBS separately
-
-This repo collapses that into one control surface without turning it into a bloated streaming suite.
-
-## Architecture
-
-![Architecture diagram](docs/architecture.svg)
-
-```mermaid
-flowchart LR
-  UI[Renderer UI] --> IPC[Preload IPC bridge]
-  IPC --> Main[Electron main process]
-  Main --> Scan[LAN scan over HTTP]
-  Main --> Start[bin/start.sh]
-  Start --> DroidCam[droidcam-cli]
-  Main --> Journal[journalctl --user -f]
-  Main --> OBS[obs]
-  Main --> Config[config/settings.json + profiles.json]
-```
-
-## Features
-
-### Live Preview
-
-The preview panel binds directly to the DroidCam MJPEG feed exposed at `http://<ip>:<port>/video`.
-
-### Auto Detection
-
-The app enumerates non-virtual IPv4 interfaces, derives nearby `/24` subnets, and probes for a DroidCam video endpoint with bounded concurrency.
-
-### Profiles
-
-| Profile | Size | Audio | Use case |
-| --- | --- | --- | --- |
-| `gaming` | `1280x720` | Off | Stable overhead while OBS is live |
-| `recording` | `1920x1080` | On | Higher quality capture |
-| `low-latency` | `960x720` | Off | Faster recovery on noisy links |
-
-### Logs Panel
-
-If `virtual-webcam-driver.service` is installed as a user unit, the app follows it with `journalctl --user -f`. If not, the UI still shows the live stdout and stderr from the launched driver process.
-
-### OBS Handoff
-
-`Launch OBS` starts the locally installed `obs` binary without taking over the rest of the workflow.
-
-## Quick Start
+Clone the repo, then run:
 
 ```bash
-cd virtual-webcam-driver
 npm install
-npm start
+./bin/install-desktop-entry.sh
 ```
 
-For day-to-day use after the first install, you do not need `npm start`.
+After that, open `Virtual Webcam Driver` from your applications menu.
 
-- Double-click [`Virtual Webcam Driver.desktop`](/home/oghenedoro/Projects/Droid Virtual cam OBS /virtual-webcam-driver/Virtual Webcam Driver.desktop) from the repo folder, or
-- Run [`bin/launch-ui.sh`](/home/oghenedoro/Projects/Droid Virtual cam OBS /virtual-webcam-driver/bin/launch-ui.sh)
+On first launch, the app opens a terminal and automatically:
 
-The launcher uses the local Electron binary directly and writes startup logs to `.logs/launcher.log`.
+- checks dependencies
+- installs the desktop launcher if needed
+- creates the virtual camera device for OBS if it is missing
+- starts the app
 
-Requirements:
+When you click `Start Driver`, the app also checks for the virtual camera device and creates it automatically if it is missing.
+
+If you want to start it directly without the applications menu, run:
+
+```bash
+./bin/easy-start.sh
+```
+
+## What The App Does
+
+- shows a live DroidCam preview
+- scans the local network for DroidCam endpoints
+- provides built-in profiles
+- streams logs into the UI
+- launches OBS
+- shows which `/dev/videoN` device OBS should use
+
+Profiles are split so the common path stays simple:
+
+- `Recording` is video-only by default
+- `Recording + Audio` enables phone audio when ALSA loopback is available
+
+## Requirements
 
 - Linux
-- `droidcam-cli` on `PATH`
-- `obs` on `PATH` for the OBS button
-- `journalctl` and `systemctl` for service-aware telemetry
+- Node.js and npm
+- `droidcam-cli`
+- `obs` for OBS launch support
+- `journalctl` and `systemctl` for optional service-aware telemetry
 
-## systemd User Service
+The app can automatically create a V4L2 loopback device for OBS on first run, but it may ask for your sudo password.
+If you choose an audio-enabled profile, the app can also try to create the ALSA loopback device automatically. If that fails, it falls back to video-only mode instead of aborting the stream.
 
-Copy the example env file and set the repo path plus your target host:
+## OBS Setup
+
+If the preview works in the app but OBS shows a frozen or wrong image:
+
+1. Start the driver from the app.
+2. Check the output device shown in the UI, for example `/dev/video10`.
+3. In OBS, add or edit a `Video Capture Device` source.
+4. Select that same `/dev/videoN` device.
+
+## Optional systemd User Service
+
+Copy the example environment file:
 
 ```bash
 mkdir -p ~/.config/virtual-webcam-driver
@@ -105,27 +82,17 @@ systemctl --user daemon-reload
 systemctl --user enable --now virtual-webcam-driver.service
 ```
 
-The app will detect the unit automatically and start following its journal.
-
-## Screenshot Generation
-
-The repo ships with a vector screenshot for GitHub, and can also generate a PNG from the real Electron UI in demo mode:
-
-```bash
-npm run capture:screenshot
-```
-
-Output:
-
-- `docs/screenshots/dashboard.png`
-
-## Repo Layout
+## Project Layout
 
 ```text
 virtual-webcam-driver/
-├── app/                 # Electron main process, preload bridge, renderer UI, styles
-├── bin/                 # Runtime launcher for droidcam-cli
-├── config/              # Profiles, app settings, and service env example
-├── docs/                # Architecture diagram and screenshot assets
+├── app/                 # Electron app code
+├── bin/                 # Launch and setup scripts
+├── config/              # Profiles, settings, and service env example
+├── docs/                # Architecture and screenshot assets
 └── systemd/             # Optional user service
 ```
+
+## License
+
+MIT. See [LICENSE](LICENSE).

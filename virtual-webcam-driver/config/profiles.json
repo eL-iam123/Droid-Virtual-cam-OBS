@@ -11,13 +11,23 @@
   },
   "recording": {
     "label": "Recording",
-    "description": "1080p profile tuned for capture quality and optional audio.",
+    "description": "1080p profile tuned for capture quality with video-only defaults.",
+    "size": "1920x1080",
+    "previewSize": "1280x720",
+    "enableAudio": false,
+    "scanTimeoutMs": 320,
+    "reconnectBias": "balanced",
+    "notes": "Use when image quality matters more than minimum latency."
+  },
+  "recording-audio": {
+    "label": "Recording + Audio",
+    "description": "1080p profile with audio enabled for systems that have snd_aloop available.",
     "size": "1920x1080",
     "previewSize": "1280x720",
     "enableAudio": true,
     "scanTimeoutMs": 320,
     "reconnectBias": "balanced",
-    "notes": "Use when image quality matters more than minimum latency."
+    "notes": "Use when you want phone audio and the ALSA loopback device is available."
   },
   "low-latency": {
     "label": "Low Latency",

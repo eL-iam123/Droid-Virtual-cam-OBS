@@ -1,8 +1,9 @@
 {
-  "selectedProfile": "recording",
+  "selectedProfile": "recording-audio",
   "sourceMode": "wifi",
-  "host": "192.168.1.87",
+  "host": "172.20.10.1",
   "port": 4747,
-  "videoDevice": "",
-  "journalUnit": "virtual-webcam-driver.service"
+  "videoDevice": "/dev/video10",
+  "journalUnit": "virtual-webcam-driver.service",
+  "setupCompleted": true
 }

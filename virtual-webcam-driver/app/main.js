@@ -11,6 +11,8 @@ const CONFIG_DIR = path.join(ROOT_DIR, 'config');
 const SETTINGS_PATH = path.join(CONFIG_DIR, 'settings.json');
 const PROFILES_PATH = path.join(CONFIG_DIR, 'profiles.json');
 const START_SCRIPT_PATH = path.join(ROOT_DIR, 'bin', 'start.sh');
+const SETUP_CAMERA_SCRIPT_PATH = path.join(ROOT_DIR, 'bin', 'setup-virtual-camera.sh');
+const SETUP_AUDIO_SCRIPT_PATH = path.join(ROOT_DIR, 'bin', 'setup-audio-loopback.sh');
 const DEMO_FEED_PATH = path.join(ROOT_DIR, 'docs', 'assets', 'demo-feed.svg');
 const SERVICE_UNIT = 'virtual-webcam-driver.service';
 const VIDEO_CLASS_DIR = '/sys/class/video4linux';
@@ -105,7 +107,8 @@ function sanitizeSettings(raw) {
     host: String(raw?.host || '').trim(),
     port: Number.isInteger(port) && port > 0 && port <= 65535 ? port : 4747,
     videoDevice: String(raw?.videoDevice || '').trim(),
-    journalUnit: String(raw?.journalUnit || SERVICE_UNIT).trim() || SERVICE_UNIT
+    journalUnit: String(raw?.journalUnit || SERVICE_UNIT).trim() || SERVICE_UNIT,
+    setupCompleted: Boolean(raw?.setupCompleted)
   };
 }
 
@@ -122,7 +125,9 @@ function detectCapabilities() {
     ffmpeg: resolveCommand('ffmpeg'),
     journalctl: resolveCommand('journalctl'),
     systemctl: resolveCommand('systemctl'),
-    obs: resolveCommand('obs')
+    obs: resolveCommand('obs'),
+    v4l2loopback: pathExists('/sys/module/v4l2loopback'),
+    sndAloop: pathExists('/sys/module/snd_aloop') || pathExists('/proc/asound/Loopback')
   };
 }
 
@@ -285,7 +290,7 @@ function ensureVideoOutput() {
   const output = resolveVideoOutput();
 
   if (!output.selected) {
-    throw new Error('No V4L2 loopback device was detected. Load v4l2loopback and point OBS at the selected /dev/videoN device.');
+    throw new Error('No V4L2 loopback device was detected.');
   }
 
   if (!settings.videoDevice || settings.videoDevice !== output.selected.path) {
@@ -294,6 +299,93 @@ function ensureVideoOutput() {
   }
 
   return output.selected;
+}
+
+function hasAudioLoopback() {
+  return pathExists('/sys/module/snd_aloop') || pathExists('/proc/asound/Loopback');
+}
+
+function runManagedScript(scriptPath, sourceLabel) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(scriptPath, [], {
+      cwd: ROOT_DIR,
+      env: process.env,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    logEntry('setup', 'info', `Running ${sourceLabel}`);
+    child.stdout.on('data', (chunk) => {
+      stdout += String(chunk);
+      logChunk('setup', 'info', chunk);
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += String(chunk);
+      logChunk('setup', 'warn', chunk);
+    });
+    child.on('error', (error) => reject(error));
+    child.on('exit', (code) => {
+      if (code === 0) {
+        resolve({ stdout, stderr });
+        return;
+      }
+
+      const detail = stderr.trim() || stdout.trim() || `${sourceLabel} failed with exit code ${code}`;
+      reject(new Error(detail));
+    });
+  });
+}
+
+async function ensureVideoOutputReady() {
+  const output = resolveVideoOutput();
+
+  if (output.selected) {
+    if (!settings.videoDevice || settings.videoDevice !== output.selected.path) {
+      settings.videoDevice = output.selected.path;
+      persistSettings();
+    }
+    return output.selected;
+  }
+
+  logEntry('setup', 'info', 'No V4L2 loopback device detected. Running setup-virtual-camera.sh before starting the driver.');
+  await runManagedScript(SETUP_CAMERA_SCRIPT_PATH, 'virtual camera setup');
+
+  const refreshedOutput = resolveVideoOutput();
+  if (!refreshedOutput.selected) {
+    throw new Error('Virtual camera setup completed, but no /dev/videoN device was detected.');
+  }
+
+  settings.videoDevice = refreshedOutput.selected.path;
+  persistSettings();
+  return refreshedOutput.selected;
+}
+
+async function resolveAudioEnabled(activeProfile) {
+  if (!activeProfile.enableAudio) {
+    return false;
+  }
+
+  if (hasAudioLoopback()) {
+    return true;
+  }
+
+  logEntry('setup', 'info', 'Audio profile requested. Running setup-audio-loopback.sh before starting the driver.');
+
+  try {
+    await runManagedScript(SETUP_AUDIO_SCRIPT_PATH, 'audio loopback setup');
+  } catch (error) {
+    logEntry('setup', 'warn', `Audio setup failed. Continuing without audio. ${error.message}`);
+    return false;
+  }
+
+  if (!hasAudioLoopback()) {
+    logEntry('setup', 'warn', 'Audio setup completed but snd_aloop is still unavailable. Continuing without audio.');
+    return false;
+  }
+
+  return true;
 }
 
 function logEntry(source, level, message) {
@@ -368,7 +460,9 @@ function buildState() {
       hasFfmpeg: Boolean(capabilities.ffmpeg),
       hasJournalctl: Boolean(capabilities.journalctl),
       hasSystemctl: Boolean(capabilities.systemctl),
-      hasObs: Boolean(capabilities.obs)
+      hasObs: Boolean(capabilities.obs),
+      hasV4l2loopback: pathExists('/sys/module/v4l2loopback'),
+      hasSndAloop: hasAudioLoopback()
     }
   };
 }
@@ -415,6 +509,26 @@ function runCommand(command, args, options = {}) {
       }
     );
   });
+}
+
+async function runSetupStep(stepId) {
+  logEntry('setup', 'info', `Requested setup step: ${stepId}`);
+
+  try {
+    if (stepId === 'v4l2loopback') {
+      await runManagedScript(SETUP_CAMERA_SCRIPT_PATH, 'virtual camera setup');
+    } else if (stepId === 'snd_aloop') {
+      await runManagedScript(SETUP_AUDIO_SCRIPT_PATH, 'audio loopback setup');
+    } else {
+      throw new Error(`Unknown setup step: ${stepId}`);
+    }
+
+    broadcastState();
+    return { ok: true };
+  } catch (error) {
+    logEntry('setup', 'error', `Setup step ${stepId} failed: ${error.message}`);
+    return { ok: false, error: error.message };
+  }
 }
 
 async function refreshServiceStatus() {
@@ -521,8 +635,7 @@ function stopJournalStream() {
   }
 }
 
-function buildStartEnvironment(videoDevicePath) {
-  const activeProfile = getProfile();
+function buildStartEnvironment(activeProfile, videoDevicePath, enableAudio) {
   return {
     ...process.env,
     PROFILE: activeProfile.id,
@@ -530,12 +643,13 @@ function buildStartEnvironment(videoDevicePath) {
     DROIDCAM_HOST: settings.host,
     DROIDCAM_PORT: String(settings.port),
     DROIDCAM_SIZE: activeProfile.size,
-    ENABLE_AUDIO: activeProfile.enableAudio ? '1' : '0',
+    ENABLE_AUDIO: enableAudio ? '1' : '0',
     VIDEO_DEVICE: videoDevicePath || settings.videoDevice
   };
 }
 
 async function startWebcam() {
+  const activeProfile = getProfile();
   if (!capabilities.droidcamCli) {
     throw new Error('droidcam-cli is not installed or not on PATH.');
   }
@@ -545,12 +659,13 @@ async function startWebcam() {
   if (settings.sourceMode === 'wifi' && !settings.host && !DEMO_MODE) {
     throw new Error('Select or detect a DroidCam host before starting the driver.');
   }
-  const outputDevice = DEMO_MODE ? null : ensureVideoOutput();
+  const outputDevice = DEMO_MODE ? null : await ensureVideoOutputReady();
+  const enableAudio = DEMO_MODE ? activeProfile.enableAudio : await resolveAudioEnabled(activeProfile);
 
   if (DEMO_MODE) {
     runtime.demoRunning = true;
     runtime.driverBackend = 'demo';
-    logEntry('process', 'info', `Demo start for profile=${settings.selectedProfile} target=${settings.host || '192.168.1.87'}:${settings.port}`);
+    logEntry('process', 'info', `Demo start for profile=${settings.selectedProfile} target=${settings.host || '192.168.1.87'}:${settings.port} audio=${enableAudio ? 'on' : 'off'}`);
     runtime.previewStatus = 'online';
     broadcastState();
     return buildState();
@@ -558,14 +673,14 @@ async function startWebcam() {
 
   const child = spawn('/bin/bash', [START_SCRIPT_PATH], {
     cwd: ROOT_DIR,
-    env: buildStartEnvironment(outputDevice?.path),
+    env: buildStartEnvironment(activeProfile, outputDevice?.path, enableAudio),
     stdio: ['ignore', 'pipe', 'pipe']
   });
 
   runtime.child = child;
   runtime.driverBackend = 'droidcam-cli';
   runtime.previewStatus = settings.host ? 'connecting' : 'idle';
-  logEntry('process', 'info', `Launching ${settings.selectedProfile} profile against ${settings.host}:${settings.port} on ${outputDevice.path}`);
+  logEntry('process', 'info', `Launching ${settings.selectedProfile} profile against ${settings.host}:${settings.port} on ${outputDevice.path} audio=${enableAudio ? 'on' : 'off'}`);
   broadcastState();
 
   child.stdout.on('data', (chunk) => logChunk('process', 'info', chunk));
@@ -617,7 +732,7 @@ async function launchObs() {
     return buildState();
   }
 
-  const outputDevice = ensureVideoOutput();
+  const outputDevice = await ensureVideoOutputReady();
 
   if (!isDriverRunning() && settings.host) {
     await startWebcam();
